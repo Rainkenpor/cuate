@@ -10,7 +10,7 @@ packages:
     source: hosted
     version: "2.13.0"
   background_downloader:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: background_downloader
       sha256: a22acfa37aa06ba5cfe6eb7b1aa700c78af64770ff450c73dd3d279d7c37d4ac
@@ -465,7 +465,7 @@ packages:
     source: hosted
     version: "2.1.8"
   shared_preferences:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: shared_preferences
       sha256: "6e8bf70b7fef813df4e9a36f658ac46d107db4b4cfe1048b477d4e453a8159f5"

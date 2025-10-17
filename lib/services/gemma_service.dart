@@ -1,5 +1,8 @@
 import 'dart:typed_data';
+import 'dart:io';
 import 'package:flutter_gemma/flutter_gemma.dart';
+import 'package:background_downloader/background_downloader.dart';
+import 'model_download_service.dart';
 
 class GemmaService {
   static const String modelUrl =
@@ -9,36 +12,76 @@ class GemmaService {
 
   InferenceModel? _inferenceModel;
   InferenceChat? _chat;
+  final ModelDownloadService _downloadService = ModelDownloadService();
 
-  // Verifica si el modelo ya está descargado
+  /// Inicializa el servicio de descarga
+  Future<void> initializeDownloadService() async {
+    await _downloadService.initialize();
+  }
+
+  /// Verifica si el modelo ya está descargado
   Future<bool> isModelDownloaded() async {
+    return await _downloadService.isModelDownloaded();
+  }
+
+  /// Obtiene el progreso actual de descarga
+  Future<double> getDownloadProgress() async {
+    return await _downloadService.getDownloadProgress();
+  }
+
+  /// Descarga el modelo con soporte de persistencia y reanudación
+  /// La descarga continuará incluso si se pierde la conexión
+  Future<void> downloadModel({
+    required Function(double progress) onProgress,
+    required Function(TaskStatus status) onStatusChange,
+  }) async {
     try {
-      // Intenta inicializar el modelo para ver si está disponible
-      await FlutterGemma.getActiveModel(maxTokens: 512);
-      return true;
+      await _downloadService.downloadModel(
+        onProgress: onProgress,
+        onStatusChange: onStatusChange,
+      );
     } catch (e) {
-      return false;
+      throw Exception('Error al descargar el modelo: $e');
     }
   }
 
-  // Descarga el modelo con progreso usando la API de flutter_gemma
-  Future<void> downloadModel({
-    required Function(double progress) onProgress,
-  }) async {
-    try {
-      var lastProgress = 0.0;
-      await FlutterGemma.installModel(modelType: ModelType.gemmaIt)
-          .fromNetwork(modelUrl, token: huggingFaceToken)
-          .withProgress((downloadProgress) {
-            // downloadProgress es un int (porcentaje 0-100)
-            lastProgress = downloadProgress / 100.0;
-            onProgress(lastProgress);
-          })
-          .install();
+  /// Pausa la descarga actual
+  Future<bool> pauseDownload() async {
+    return await _downloadService.pauseDownload();
+  }
 
-      onProgress(1.0);
+  /// Reanuda la descarga pausada
+  Future<bool> resumeDownload() async {
+    return await _downloadService.resumeDownload();
+  }
+
+  /// Cancela la descarga
+  Future<bool> cancelDownload() async {
+    return await _downloadService.cancelDownload();
+  }
+
+  /// Obtiene el estado actual de la descarga
+  TaskStatus? getDownloadStatus() {
+    return _downloadService.getCurrentStatus();
+  }
+
+  /// Instala el modelo en flutter_gemma desde el archivo descargado
+  Future<void> installModelFromFile() async {
+    try {
+      final modelPath = await _downloadService.getModelPath();
+
+      if (modelPath == null || !await File(modelPath).exists()) {
+        throw Exception('El archivo del modelo no existe');
+      }
+
+      // Instalar el modelo desde el archivo local
+      await FlutterGemma.installModel(
+        modelType: ModelType.gemmaIt,
+      ).fromFile(modelPath).install();
+
+      print('Modelo instalado exitosamente desde: $modelPath');
     } catch (e) {
-      throw Exception('Error al descargar el modelo: $e');
+      throw Exception('Error al instalar el modelo: $e');
     }
   }
 

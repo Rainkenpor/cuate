@@ -53,6 +53,12 @@ dependencies:
   
   # Path Provider
   path_provider: ^2.1.4
+  
+  # Background Download for large files
+  background_downloader: ^9.2.6
+  
+  # Shared Preferences for download state
+  shared_preferences: ^2.3.3
 
 dev_dependencies:
   flutter_test:
